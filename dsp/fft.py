@@ -1,4 +1,6 @@
 # Fast Fourier Transform (FFT) implementation in Python
+# In all honesty, the stack will just use numpy's FFT implementation, 
+# but this is a good exercise to understand how the FFT works.
 
 import numpy as np
 

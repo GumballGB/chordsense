@@ -1,4 +1,6 @@
 # File just for processing the fourier transform
+# In all honesty, the stack will just use numpy's FFT implementation,
+# but this is a good exercise to understand how the FFT works.
 
 import numpy as np
 
@@ -68,5 +70,5 @@ def amplitude_spectrum(X):
     else:
         amps = np.abs(X[: N // 2 + 1]) * (2.0 / N)
         amps[0] *= 0.5
-    
+
     return amps
