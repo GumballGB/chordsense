@@ -40,17 +40,20 @@ Our stack does not process that, so it should be converted for MONO
 
 3. NORMALIZE: The amplitude of some signal will probably be higher than int's range.
 The range of int is 32k. You actually faced a similar problem in your guitar tuner project (ECSE444).
-Where all signals were just boosted to 32k all the time. So normalize it to be between -1 and 1.
+Where all signals were just clipped to 32k all the time. So normalize it to be between -1 and 1.
 Also remember you had an issue with negative values for amplitude, it sort of just became positive
 
 4. FRAME: Only process FFT under a certain time window at a time, because chord progressions exist.
+Study the Hann Window, it is useful somehow. 
 
-5. FFT: The math is severely undertoned with np.fft 
+5. FFT: The math is severely undervalued with np.fft 
 
 6. CHROMA: Translate frequency bank into a bank of notes, it will lead to an array(like) of 12
 
 7. TEMPLATE MATCHING: Compare that array(like) of notes to a template, to see which template it matches the most
 This is where chord detection probably happens.
 
-8. SMOOTHING: A filter, filter out the noise somehow.
+8. SMOOTHING: A filter that removes flickering chords over time.
+
+As of now, you're still just doing one note at a time. 
 
