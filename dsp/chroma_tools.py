@@ -45,16 +45,16 @@ def build_chroma(peaks, a4_hz=440.0):
     return chroma
 
 
-def filter_chroma(chroma, threshold=0.6):
+def filter_chroma(chroma, threshold=0.0):
     """
     Keep the pitch classes whose bin is at least threshold times the strongest.
 
     chroma is a 12-bin vector from build_chroma.
     threshold is a fraction between 0 and 1 of the strongest bin.
 
-    The default 0.6 is tuned on synthesized C major chords with harmonics.
-    A note played once can fall below it when other notes are doubled
-    across octaves, since doubling also adds to a bin.
+    The threshold is now legacy, it has been kept for compatibility.
+    All bins are considered, the cosine similarity is now taken into account
+    instead of a hard threshold. Regardless, the threshold is kept for now.
 
     Returns:
     list[int]: Surviving pitch classes in ascending order, or [] if silent.

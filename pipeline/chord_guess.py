@@ -14,6 +14,7 @@ import dsp.mono_tools as mono
 import dsp.peak_tools as peak
 import dsp.note_tools as note
 import dsp.sine as sine
+import dsp.template_tools as template_tools
 import dsp.window_tools as window
 
 
@@ -120,23 +121,35 @@ def guess_chord(peaks):
     return ct.chord_extract(midi_notes)
 
 
-def guess_chord_chroma(peaks, threshold=0.6):
+def guess_chord_chroma(peaks, min_score=0.8):
     """
-    Weigh peaks by amplitude in a chroma vector, then return a chord name or None.
+    Return the best cosine-matched chord name, or None below min_score.
 
-    guess_chord counts every peak equally, so a weak harmonic can add a
-    foreign note. Here peaks are summed per pitch class first, and only
-    pitch classes at least threshold times the strongest one are kept.
+    peaks is a list of frequency/amplitude dicts. They are not notes
+
+    min_score is the cutoff for accepting a chord.
+
+    All chroma weights reach the matcher; no pitch-class cutoff is applied.
+    min_score is a heuristic final-answer cutoff, not a confidence probability.
+    Set it to 0 to accept any non-silent match. To inspect the score, call
+    match_chord(build_chroma(peaks)) from dsp.template_tools/dsp.chroma_tools.
     """
 
-    # Sum amplitudes into 12 pitch-class bins
+    # Validate min_score.
+    if not np.isfinite(min_score) or not 0 <= min_score <= 1:
+        raise ValueError("min_score must be between 0 and 1")
+
+    # Sum amplitudes into 12 pitch-class bins, keeping even weak bins.
     chroma = chroma_tools.build_chroma(peaks)
 
-    # Keep only the strong pitch classes
-    pitch_classes = chroma_tools.filter_chroma(chroma, threshold=threshold)
+    # Compare the complete vector against every chord template.
+    # A cosine similarity will be used to match chords.
+    name, score = template_tools.match_chord(chroma)
 
-    # Pitch classes are already modulo 12, chord_extract accepts them as-is
-    return ct.chord_extract(pitch_classes)
+    if score < min_score:
+        return None
+    
+    return name
 
 
 if __name__ == "__main__":

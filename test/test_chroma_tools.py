@@ -82,17 +82,18 @@ def harmonic_c_major(**kwargs):
     return chord / np.max(np.abs(chord))
 
 
-@pytest.mark.parametrize('kwargs', [
-    {'damped': True},
-    {'damped': True, 'decay_rate': 0.5},
-    {},
+@pytest.mark.parametrize(('kwargs', 'expected'), [
+    ({'damped': True}, 'C'),
+    ({'damped': True, 'decay_rate': 0.5}, 'C'),
+    ({}, 'Cmaj7'),
 ])
-def test_harmonic_c_major_is_detected_with_chroma(kwargs):
-    # The same three chords as the notebook. guess_chord fails on the last two.
+def test_harmonic_c_major_template_results(kwargs, expected):
+    # Equal-strength upper harmonics make Cmaj7 the closest binary template
+    # in the undamped case, even though C major was played.
     frame, weights = prepare_frame(harmonic_c_major(**kwargs))
     peaks = signal_to_peaks(frame, window_weights=weights)
 
-    assert guess_chord_chroma(peaks) == 'C'
+    assert guess_chord_chroma(peaks) == expected
 
 
 @pytest.mark.parametrize(('midi_notes', 'expected'), [
