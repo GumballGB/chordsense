@@ -8,6 +8,7 @@ Run the synthesized C-major example from the repository root with:
 import numpy as np
 
 import dsp.chord_tools as ct
+import dsp.chroma_tools as chroma_tools
 from dsp.fourier_transform import amplitude_spectrum
 import dsp.mono_tools as mono
 import dsp.peak_tools as peak
@@ -117,6 +118,25 @@ def guess_chord(peaks):
 
     # Extract chord from MIDI notes
     return ct.chord_extract(midi_notes)
+
+
+def guess_chord_chroma(peaks, threshold=0.6):
+    """
+    Weigh peaks by amplitude in a chroma vector, then return a chord name or None.
+
+    guess_chord counts every peak equally, so a weak harmonic can add a
+    foreign note. Here peaks are summed per pitch class first, and only
+    pitch classes at least threshold times the strongest one are kept.
+    """
+
+    # Sum amplitudes into 12 pitch-class bins
+    chroma = chroma_tools.build_chroma(peaks)
+
+    # Keep only the strong pitch classes
+    pitch_classes = chroma_tools.filter_chroma(chroma, threshold=threshold)
+
+    # Pitch classes are already modulo 12, chord_extract accepts them as-is
+    return ct.chord_extract(pitch_classes)
 
 
 if __name__ == "__main__":
