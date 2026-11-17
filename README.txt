@@ -14,6 +14,9 @@ python3.12 -m venv .venv
 If on LINUX, install the python venv w/ this line (it works on my computer)
 sudo apt install python3-venv python3-pip
 
+You also need to capture audio on a linux machine
+sudo apt install libportaudio2
+
 Then
 
 python3.12 -m venv .venv --prompt chordsense

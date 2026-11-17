@@ -23,7 +23,7 @@ def test_synthesized_chord_pipeline(midi_notes, expected, sample_rate):
     frequencies = [440 * 2 ** ((n - 69) / 12) for n in midi_notes]
     signal = sum(sine(f, 1, sample_rate) for f in frequencies) / len(frequencies)
 
-    frame, weights = prepare_frame(signal, frame_size=sample_rate)
+    frame, weights = prepare_frame(signal, sample_rate=sample_rate, frame_size=sample_rate)
     peaks = signal_to_peaks(frame, sample_rate=sample_rate, window_weights=weights)
 
     assert len(peaks) == len(set(midi_notes))
@@ -57,10 +57,10 @@ def test_pipeline_does_not_implicitly_crop_to_one_second():
 
 
 def test_stereo_chord_through_preparation_and_detection():
-    chord = sum(sine(f, 1) for f in (261.625565, 329.627557, 391.995436)) / 3
+    chord = sum(sine(f, 1.5) for f in (261.625565, 329.627557, 391.995436)) / 3
     stereo = np.column_stack([chord, 0.5 * chord])
 
-    frame, weights = prepare_frame(stereo)
+    frame, weights = prepare_frame(stereo, sample_rate=44100, skip_seconds=0)
 
     assert frame.shape == (44100,)
     assert frame[0] == frame[-1] == 0
@@ -77,7 +77,7 @@ def test_preparation_takes_only_the_requested_frame():
     a_minor = sum(sine(f, 1) for f in (220, 261.625565, 329.627557)) / 3
     signal = np.concatenate([c_major, a_minor])
 
-    frame, weights = prepare_frame(signal, frame_size=44100)
+    frame, weights = prepare_frame(signal, sample_rate=44100 ,frame_size=44100, skip_seconds=0)
 
     assert frame.shape == (44100,)
     assert guess_chord(signal_to_peaks(frame, window_weights=weights)) == 'C'
@@ -85,7 +85,7 @@ def test_preparation_takes_only_the_requested_frame():
 
 @pytest.mark.parametrize('signal', [[], np.empty((0, 2)), np.full((44100, 2), 1000)])
 def test_preparation_handles_empty_or_constant_audio(signal):
-    frame, weights = prepare_frame(signal)
+    frame, weights = prepare_frame(signal, sample_rate=44100)
     peaks = signal_to_peaks(frame, window_weights=weights)
     assert peaks == []
     assert guess_chord(peaks) is None
@@ -95,7 +95,7 @@ def test_preparation_handles_empty_or_constant_audio(signal):
 def test_windowed_peak_reports_original_tone_amplitude(sample_rate):
     # An integer-Hz tone in a one-second frame lands exactly on an FFT bin.
     signal = 0.33 * sine(440, 1, sample_rate) + 0.25
-    frame, weights = prepare_frame(signal, frame_size=sample_rate)
+    frame, weights = prepare_frame(signal, sample_rate=sample_rate, frame_size=sample_rate, skip_seconds=0)
     peaks = signal_to_peaks(frame, sample_rate=sample_rate, window_weights=weights)
 
     assert len(peaks) == 1

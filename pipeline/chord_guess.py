@@ -17,16 +17,54 @@ import dsp.sine as sine
 import dsp.template_tools as template_tools
 import dsp.window_tools as window
 
-
-def prepare_frame(signal, frame_size=44100):
+# The complete pipeline from mono to chord guess
+def full_pipeline(signal, sample_rate, min_score=0.8):
     """
-    Prepare the first frame for an FFT, with each processing step explicit.
+    The complete pipeline from audio to chord guess
+    Returns a dict with frame, peaks, chroma, score, and chord.
+
+    min_score is the threshold for chord acceptance.
+    
+    Returns None for chord if score is below min_score.
+    """
+
+    # At each stage, record the output in a dictionary
+    outputs = {}
+        
+    frame, weights = prepare_frame(signal, sample_rate=sample_rate, frame_size=sample_rate)
+
+    outputs["frame"] = frame
+    outputs["weights"] = weights
+
+    peaks = signal_to_peaks(frame, sample_rate=sample_rate, window_weights=weights)
+
+    outputs["peaks"] = peaks
+
+    chroma = chroma_tools.build_chroma(peaks)
+    name, score = template_tools.match_chord(chroma)
+
+    outputs["chroma"] = chroma
+    outputs["score"] = score
+
+    outputs["chord"] = name if score >= min_score else None
+    
+    return outputs
+
+
+def prepare_frame(signal, sample_rate, frame_size=44100, skip_seconds=0.1):
+    """
+    Prepare the frame for an FFT, with each processing step explicit.
 
     frame_size counts samples, not seconds. Use frame_size=sample_rate for
     one second of audio. Shorter signals are used as-is, without padding.
     Return (windowed_samples, window_weights); pass both to signal_to_peaks.
     """
+
     mono_signal = mono.to_mono(signal)
+
+    # Detect the start of sound
+    start = window.detect_start(mono_signal, sample_rate, skip_seconds=skip_seconds)
+    mono_signal = mono_signal[start:]
 
     frame = window.take_frame_mono(mono_signal, frame_size=frame_size)
 
@@ -169,7 +207,7 @@ if __name__ == "__main__":
     signal = signal / len(frequencies)
 
     # Prepare frame for analysis
-    frame, weights = prepare_frame(signal, frame_size=sample_rate)
+    frame, weights = prepare_frame(signal, sample_rate=sample_rate, frame_size=sample_rate)
 
     # Find peaks in the frame
     peaks = signal_to_peaks(frame, sample_rate=sample_rate, window_weights=weights)

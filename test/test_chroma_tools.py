@@ -90,7 +90,7 @@ def harmonic_c_major(**kwargs):
 def test_harmonic_c_major_template_results(kwargs, expected):
     # Equal-strength upper harmonics make Cmaj7 the closest binary template
     # in the undamped case, even though C major was played.
-    frame, weights = prepare_frame(harmonic_c_major(**kwargs))
+    frame, weights = prepare_frame(harmonic_c_major(**kwargs), sample_rate=44100)
     peaks = signal_to_peaks(frame, window_weights=weights)
 
     assert guess_chord_chroma(peaks) == expected
@@ -106,7 +106,7 @@ def test_pure_sine_chords_still_work_with_chroma(midi_notes, expected):
     frequencies = [440 * 2 ** ((n - 69) / 12) for n in midi_notes]
     signal = sum(sine(f, 1) for f in frequencies) / len(frequencies)
 
-    frame, weights = prepare_frame(signal)
+    frame, weights = prepare_frame(signal, sample_rate=44100)
     peaks = signal_to_peaks(frame, window_weights=weights)
 
     assert guess_chord_chroma(peaks) == expected
