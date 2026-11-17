@@ -18,20 +18,21 @@ import dsp.template_tools as template_tools
 import dsp.window_tools as window
 
 # The complete pipeline from mono to chord guess
-def full_pipeline(signal, sample_rate, min_score=0.8):
+# A sliding frame is now considered as well.
+def full_pipeline(signal, sample_rate, min_score=0.8, find_start=True):
     """
     The complete pipeline from audio to chord guess
     Returns a dict with frame, peaks, chroma, score, and chord.
 
     min_score is the threshold for chord acceptance.
-    
+
     Returns None for chord if score is below min_score.
     """
 
     # At each stage, record the output in a dictionary
     outputs = {}
         
-    frame, weights = prepare_frame(signal, sample_rate=sample_rate, frame_size=sample_rate)
+    frame, weights = prepare_frame(signal, sample_rate=sample_rate, frame_size=sample_rate, find_start=find_start)
 
     outputs["frame"] = frame
     outputs["weights"] = weights
@@ -51,7 +52,7 @@ def full_pipeline(signal, sample_rate, min_score=0.8):
     return outputs
 
 
-def prepare_frame(signal, sample_rate, frame_size=44100, skip_seconds=0.1):
+def prepare_frame(signal, sample_rate, frame_size=44100, skip_seconds=0.1, find_start=True):
     """
     Prepare the frame for an FFT, with each processing step explicit.
 
@@ -63,8 +64,11 @@ def prepare_frame(signal, sample_rate, frame_size=44100, skip_seconds=0.1):
     mono_signal = mono.to_mono(signal)
 
     # Detect the start of sound
-    start = window.detect_start(mono_signal, sample_rate, skip_seconds=skip_seconds)
-    mono_signal = mono_signal[start:]
+    if not find_start:
+        start = 0
+    else:
+        start = window.detect_start(mono_signal, sample_rate, skip_seconds=skip_seconds)
+        mono_signal = mono_signal[start:]
 
     frame = window.take_frame_mono(mono_signal, frame_size=frame_size)
 

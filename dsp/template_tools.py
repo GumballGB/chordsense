@@ -91,8 +91,6 @@ def rank_chords(chroma):
         raise ValueError("chroma must have exactly 12 bins")
     if not np.all(np.isfinite(chroma)) or np.any(chroma < 0):
         raise ValueError("chroma must contain only nonnegative finite values")
-    if not np.any(chroma):
-        return None, 0.0
 
     # If it is silent, return empty list.
     if not np.any(chroma):
