@@ -75,14 +75,12 @@ def build_templates():
 
     return templates
 
-
-def match_chord(chroma):
+# Helper function to rank chords by similarity
+def rank_chords(chroma):
     """
-    Return (best_name, score), or (None, 0.0) for silent chroma.
+    Return chords ranked by similarity. Takes a chroma vector of length 12.
 
-    Keep every chroma weight and compare every template. Exact ties keep the
-    first candidate in C-to-B root order, then CHORDS_LOOKUP insertion order.
-    No acceptance cutoff is applied here; the caller can inspect the score.
+    returns list of (name, score) sorted by score.
     """
 
     # Convert chroma to float array.
@@ -96,18 +94,40 @@ def match_chord(chroma):
     if not np.any(chroma):
         return None, 0.0
 
-    # Initialize best match.
-    best_name = None
-    best_score = 0.0
+    # If it is silent, return empty list.
+    if not np.any(chroma):
+        return []
+
+    # Initialize a list, naturally the best match is the first element
+    ranked_chords = []
 
     # Compare against all templates.
     for name, template in build_templates().items():
 
+        # Compute similarity for this chord.
         score = cosine_similarity(chroma, template)
 
-        # Update best if needed.
-        if score > best_score:
-            best_name = name
-            best_score = score
+        ranked_chords.append((name, score))
+
+
+    return sorted(ranked_chords, key=lambda x: x[1], reverse=True)
+
+
+def match_chord(chroma):
+    """
+    Return (best_name, score), or (None, 0.0) for silent chroma.
+
+    Keep every chroma weight and compare every template. Exact ties keep the
+    first candidate in C-to-B root order, then CHORDS_LOOKUP insertion order.
+    No acceptance cutoff is applied here; the caller can inspect the score.
+    """
+
+    ranked = rank_chords(chroma)
+
+    # Return no rank, then probably empty chroma
+    if not ranked:
+        return None, 0.0
+
+    best_name, best_score = ranked[0]
 
     return best_name, best_score
