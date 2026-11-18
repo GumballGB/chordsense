@@ -71,6 +71,30 @@ def chords_over_time(signal, sample_rate, frame_seconds=0.5, hop_seconds=0.1):
     return results
 
 # Function for smoothing results
+def smooth_live_result(results):
+    """
+    Vote using only recent results, ordered oldest to newest.
+
+    Ties go to the most recent chord. Return the latest result for the winning
+    chord so its score belongs to the displayed label. This needs no future
+    predictions, unlike the centered smooth_results used for recorded audio.
+    """
+
+    if not results:
+        return {"chord": None, "score": 0.0}
+
+    # Count votes for each chord
+    votes = Counter(result["chord"] for result in results)
+
+    # Find the chord with most votes
+    most_votes = max(votes.values())
+
+    # Return the most recent result with most votes
+    for result in reversed(results):
+        if votes[result["chord"]] == most_votes:
+            return dict(result)
+
+
 def smooth_results(results, window=5):
     """
     Smooth the chord sequence using a majority vote in a window.
